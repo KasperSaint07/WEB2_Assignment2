@@ -1,105 +1,161 @@
-const out = document.getElementById("out");
-const btnHealth = document.getElementById("btnHealth");
-const btnUser = document.getElementById("btnUser");
+const btn = document.getElementById("btnLoad");
+const statusEl = document.getElementById("status");
+const errorEl = document.getElementById("error");
 
 const userCard = document.getElementById("userCard");
 const countryCard = document.getElementById("countryCard");
+const exchangeCard = document.getElementById("exchangeCard");
+const newsGrid = document.getElementById("newsGrid");
 
-function showJson(obj) {
-  out.textContent = JSON.stringify(obj, null, 2);
+function setStatus(text) {
+  statusEl.textContent = text || "";
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function showError(text) {
+  if (!text) {
+    errorEl.classList.add("hidden");
+    errorEl.textContent = "";
+    return;
+  }
+  errorEl.classList.remove("hidden");
+  errorEl.textContent = text;
+}
+
+function safe(v, fallback = "—") {
+  return v === null || v === undefined || v === "" ? fallback : v;
 }
 
 function renderUser(u) {
-  userCard.classList.remove("hidden");
   userCard.innerHTML = `
-    <div class="user">
-      <img class="avatar" src="${escapeHtml(u.picture)}" alt="Profile"/>
-      <div class="userInfo">
-        <h2>${escapeHtml(u.firstName)} ${escapeHtml(u.lastName)}</h2>
-        <p><b>Gender:</b> ${escapeHtml(u.gender)}</p>
-        <p><b>Age:</b> ${escapeHtml(u.age)}</p>
-        <p><b>Date of birth:</b> ${escapeHtml(u.dateOfBirth)}</p>
-        <p><b>City:</b> ${escapeHtml(u.city)}</p>
-        <p><b>Country:</b> ${escapeHtml(u.country)}</p>
-        <p><b>Full address:</b> ${escapeHtml(u.fullAddress)}</p>
+    <h2>User</h2>
+    <div class="userRow">
+      <img class="avatar" src="${safe(u.picture, "")}" alt="User photo" />
+      <div class="kv">
+        <div><span>First name:</span> ${safe(u.firstName)}</div>
+        <div><span>Last name:</span> ${safe(u.lastName)}</div>
+        <div><span>Gender:</span> ${safe(u.gender)}</div>
+        <div><span>Age:</span> ${safe(u.age)}</div>
+        <div><span>Date of birth:</span> ${safe(u.dateOfBirth)}</div>
+        <div><span>City:</span> ${safe(u.city)}</div>
+        <div><span>Country:</span> ${safe(u.country)}</div>
+        <div><span>Address:</span> ${safe(u.fullAddress)}</div>
       </div>
     </div>
   `;
 }
 
 function renderCountry(c) {
-  countryCard.classList.remove("hidden");
+  const langs = Array.isArray(c.languages) && c.languages.length ? c.languages.join(", ") : "—";
+  const note = c.ok ? "" : `<div class="note">⚠ ${safe(c.message)}</div>`;
+
   countryCard.innerHTML = `
-    <h2>Country Info</h2>
-    <p><b>Country:</b> ${escapeHtml(c.country)}</p>
-    <p><b>Capital:</b> ${escapeHtml(c.capital)}</p>
-    <p><b>Currency:</b> ${escapeHtml(c.currency)}</p>
-    <p><b>Languages:</b> ${escapeHtml(c.languages)}</p>
-    ${
-      c.flag
-        ? `<img class="flag" src="${escapeHtml(c.flag)}" alt="Flag"/>`
-        : ""
-    }
+    <h2>Country</h2>
+    ${note}
+    <div class="countryRow">
+      <div class="kv">
+        <div><span>Country name:</span> ${safe(c.name)}</div>
+        <div><span>Capital:</span> ${safe(c.capital)}</div>
+        <div><span>Official language(s):</span> ${langs}</div>
+        <div><span>Currency:</span> ${safe(c.currencyCode)}</div>
+      </div>
+      ${c.flag ? `<img class="flag" src="${c.flag}" alt="Flag" />` : ""}
+    </div>
   `;
 }
 
-btnHealth.addEventListener("click", async () => {
-  out.textContent = "Loading...";
-  userCard.classList.add("hidden");
-  countryCard.classList.add("hidden");
+function renderExchange(x) {
+  const note = x.ok ? "" : `<div class="note">⚠ ${safe(x.message)}</div>`;
+
+  function fmt(n) {
+    if (typeof n !== "number") return "—";
+    return n.toFixed(2);
+  }
+
+  exchangeCard.innerHTML = `
+    <h2>Exchange Rates</h2>
+    ${note}
+    <div class="kv">
+      <div><span>Base currency:</span> ${safe(x.base)}</div>
+      <div><span>1 ${safe(x.base)} =</span> ${fmt(x.usd)} USD</div>
+      <div><span>1 ${safe(x.base)} =</span> ${fmt(x.kzt)} KZT</div>
+      <div class="small"><span>Provider:</span> ${safe(x.provider)}</div>
+      <div class="small"><span>Updated:</span> ${safe(x.updatedUTC)}</div>
+    </div>
+  `;
+}
+
+function renderNews(news) {
+  const note = news.ok ? "" : `<div class="note">⚠ ${safe(news.message)}</div>`;
+  const list = Array.isArray(news.articles) ? news.articles : [];
+
+  if (list.length === 0) {
+    newsGrid.innerHTML = `${note}<div class="empty">No articles found for: ${safe(news.country)}</div>`;
+    return;
+  }
+
+  newsGrid.innerHTML =
+    note +
+    list
+      .map((a) => {
+        const img = a.image
+          ? `<img class="newsImg" src="${a.image}" alt="news image" />`
+          : `<div class="newsImg placeholder">No image</div>`;
+
+        const desc = a.description ? a.description : "—";
+        const src = a.source ? a.source : "Unknown";
+
+        return `
+        <article class="newsCard">
+          ${img}
+          <div class="newsBody">
+            <h3 class="newsTitle">${safe(a.title)}</h3>
+            <p class="newsDesc">${desc}</p>
+            <div class="newsFooter">
+              <span class="source">${src}</span>
+              ${a.url ? `<a class="link" href="${a.url}" target="_blank" rel="noopener noreferrer">Open</a>` : ""}
+            </div>
+          </div>
+        </article>
+      `;
+      })
+      .join("");
+}
+
+async function loadProfile() {
+  showError("");
+  setStatus("Loading...");
+  btn.disabled = true;
+
+  userCard.innerHTML = `<div class="skeleton">Loading user...</div>`;
+  countryCard.innerHTML = `<div class="skeleton">Loading country...</div>`;
+  exchangeCard.innerHTML = `<div class="skeleton">Loading exchange...</div>`;
+  newsGrid.innerHTML = `<div class="skeleton">Loading news...</div>`;
 
   try {
-    const res = await fetch("/api/health");
+    const res = await fetch("/api/profile");
     const data = await res.json();
-    showJson(data);
-  } catch (err) {
-    out.textContent = "Error: " + err.message;
-  }
-});
 
-btnUser.addEventListener("click", async () => {
-  out.textContent = "Loading random user...";
-  userCard.classList.add("hidden");
-  countryCard.classList.add("hidden");
-
-  try {
-    // 1) random user
-    const resUser = await fetch("/api/random-user");
-    const user = await resUser.json();
-
-    if (!resUser.ok) {
-      showJson(user);
-      return;
+    if (!res.ok || !data.ok) {
+      throw new Error(data.message || "Server error");
     }
 
-    renderUser(user);
-    showJson(user);
+    renderUser(data.user);
+    renderCountry(data.country);
+    renderExchange(data.exchange);
+    renderNews(data.news);
 
-    // 2) country info (by user.country)
-    out.textContent = "Loading country info...";
-    const resCountry = await fetch(
-      "/api/country-info?country=" + encodeURIComponent(user.country)
-    );
-    const country = await resCountry.json();
-
-    if (!resCountry.ok) {
-      // покажем ошибку, но пользователя оставим
-      showJson(country);
-      return;
-    }
-
-    renderCountry(country);
-    showJson({ user, country });
+    setStatus("Done ✅");
   } catch (err) {
-    out.textContent = "Error: " + err.message;
+    showError(err.message);
+    setStatus("Failed ❌");
+    userCard.innerHTML = "";
+    countryCard.innerHTML = "";
+    exchangeCard.innerHTML = "";
+    newsGrid.innerHTML = "";
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => setStatus(""), 2500);
   }
-});
+}
+
+btn.addEventListener("click", loadProfile);

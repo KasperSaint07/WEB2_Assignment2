@@ -1,26 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Assignment 2 - API</title>
-    <link rel="stylesheet" href="/style.css" />
-  </head>
-  <body>
-    <div class="container">
-      <h1>Assignment 2</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Assignment 2 — API</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <h1>Random User + Country + Exchange + News</h1>
+    <p class="sub">All API calls happen on the server. Frontend only renders data.</p>
+  </header>
 
-      <div class="actions">
-        <button id="btnHealth">Check Server Health</button>
-        <button id="btnUser">Get Random User</button>
-      </div>
-
-      <pre id="out" class="out"></pre>
-
-      <div id="userCard" class="card hidden"></div>
-      <div id="countryCard" class="card hidden"></div>
+  <main class="wrap">
+    <div class="controls">
+      <button id="btnLoad">Get random user</button>
+      <span id="status" class="status"></span>
     </div>
 
-    <script src="/app.js"></script>
-  </body>
+    <div id="error" class="error hidden"></div>
+
+    <section class="grid">
+      <div id="userCard" class="card"></div>
+      <div id="countryCard" class="card"></div>
+      <div id="exchangeCard" class="card"></div>
+    </section>
+
+    <section>
+      <h2 class="sectionTitle">Top 5 headlines</h2>
+      <div id="newsGrid" class="newsGrid"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
 </html>
